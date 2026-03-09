@@ -2,6 +2,7 @@ package edu.touro.las.mcon364.streams.homework;
 
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Homework: E-Commerce Order Analytics
@@ -179,9 +180,13 @@ public class StreamHomework {
      * Expected: ~5765.87
      */
     public double getTotalRevenue() {
-        // TODO: Implement using streams
+        //: Implement using streams
         // Hint: Filter by DELIVERED status, then sum order totals
-        return 0.0;
+        //orders, filter by delivered status, flatten items, sum order totals
+        return customerOrders.stream()
+                .filter(order -> order.status() == OrderStatus.DELIVERED)
+                .mapToDouble(CustomerOrder::getTotal)
+                .sum();
     }
     
     /**
@@ -190,19 +195,26 @@ public class StreamHomework {
      * Example: getOrderCount(DELIVERED) -> 5
      */
     public long getOrderCount(OrderStatus status) {
-        // TODO: Implement using streams
-        return 0;
+        //  Implement using streams
+        return customerOrders.stream()
+                .filter(order -> order.status() == status)
+                .count();
+
     }
-    
+
     /**
      * Task 1.3: Get all unique products that have been ordered.
      * 
      * Returns a Set of all products that appear in any order.
      */
     public Set<Product> getUniqueProducts() {
-        // TODO: Implement using streams
+        //  Implement using streams
         // Hint: Use flatMap to get all OrderItems, then map to Product
-        return null;
+        // order items, products
+        return customerOrders.stream()
+                .flatMap(order -> order.items().stream())
+                .map(item -> item.product())
+                .collect(Collectors.toSet());
     }
     
     /**
@@ -211,9 +223,13 @@ public class StreamHomework {
      * Expected: ~1153.17
      */
     public double getAverageOrderValue() {
-        // TODO: Implement using streams
+        //  Implement using streams
         // Hint: Filter delivered orders, map to total, get average
-        return 0.0;
+        return customerOrders.stream()
+                .filter(order -> order.status() == OrderStatus.DELIVERED)
+                .mapToDouble(CustomerOrder::getTotal)
+                .average()
+                .orElse(0.0);
     }
     
     // =========================================================================
@@ -228,9 +244,14 @@ public class StreamHomework {
      * Expected includes: {C001=1509.93, C002=899.97, ...}
      */
     public Map<String, Double> getRevenueByCustomer() {
-        // TODO: Implement using streams
+        //  Implement using streams
         // Hint: Filter delivered, group by customerId, sum totals
-        return null;
+        return customerOrders.stream()
+                .filter(order -> order.status() == OrderStatus.DELIVERED)
+                .collect(Collectors.groupingBy(
+                        CustomerOrder::customerId,
+                        Collectors.summingDouble(CustomerOrder::getTotal)
+                ));
     }
     
     /**
@@ -241,9 +262,15 @@ public class StreamHomework {
      * Example: getTopCustomers(3) -> [C004, C001, C006] (or similar based on data)
      */
     public List<String> getTopCustomers(int n) {
-        // TODO: Implement using streams
+        //  Implement using streams
+        // this one was tricky to implement, review it
         // Hint: Use getRevenueByCustomer(), sort by value descending, limit
-        return null;
+        return getRevenueByCustomer().entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
+                .limit(n)
+                .collect(Collectors.toList());
+
     }
     
     /**
@@ -254,7 +281,11 @@ public class StreamHomework {
     public Map<String, Long> getCustomerOrderCounts() {
         // TODO: Implement using streams
         // Hint: Group by customerId, count
-        return null;
+        return customerOrders.stream()
+                .collect(Collectors.groupingBy(
+                        CustomerOrder::customerId,
+                        Collectors.counting())
+                );
     }
     
     /**
@@ -265,7 +296,11 @@ public class StreamHomework {
     public List<String> getCustomersWithMultipleOrders() {
         // TODO: Implement using streams
         // Hint: Use getCustomerOrderCounts(), filter count > 1
-        return null;
+        return getCustomerOrderCounts().entrySet().stream()
+                .filter(n -> n.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .toList();
+
     }
     
     // =========================================================================
